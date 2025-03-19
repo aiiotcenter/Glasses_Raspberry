@@ -1,15 +1,27 @@
+
 #include <iostream>
+#include <fstream>
+#include <string>
 #include "GptService/GptService.cpp"
 
-
-
 int main() {
+    // Read the API key from "apikey.txt"
+    std::ifstream file("apikey.txt");
+    if (!file) {
+        std::cerr << "Failed to open apikey.txt" << std::endl;
+        return 1;
+    }
+    std::string apiKey;
+    std::getline(file, apiKey);
+    file.close();
 
-    GPTService gptService("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");
+    // Initialize the GPTService with the API key read from the file
+    GPTService gptService(apiKey);
+
     std::string prompt = "Tell me a joke!";
     std::string response = gptService.getGPTResponse(prompt);
     std::cout << "GPT Response: " << response << std::endl;
-    
+
     //while(true)
     //{
 
@@ -26,5 +38,7 @@ int main() {
         //step 6 : repaet 
 
     //}
+    
     return 0;
 }
+
