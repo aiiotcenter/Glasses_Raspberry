@@ -61,7 +61,7 @@ int main()
     sendToTTS(response);
 
     // Play the generated speech file
-    system("mpg123 output.mp3");
+    // system("mpg123 output.mp3");
 
     return 0;
 }
