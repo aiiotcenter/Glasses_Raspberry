@@ -6,7 +6,7 @@
 class GPTService {
 public:
     GPTService(const std::string& apiKey) : apiKey(apiKey) {
-        console.log("GPTService constructor");
+        std::cout<<"GPTService constructor"<<std::endl;
         curl_global_init(CURL_GLOBAL_DEFAULT);
         curlHandle = curl_easy_init();
     }
@@ -34,30 +34,30 @@ public:
         std::string jsonPayload = Json::writeString(writer, jsonData);
 
         // Set up the URL and headers for the HTTP POST request
-        console.log("Set up the URL and headers for the HTTP POST request");
+        std::cout<<"Set up the URL and headers for the HTTP POST request"<<std::endl;
         const std::string url = "https://api.openai.com/v1/completions";
         struct curl_slist* headers = nullptr;
         headers = curl_slist_append(headers, ("Authorization: Bearer " + apiKey).c_str());
         headers = curl_slist_append(headers, "Content-Type: application/json");
 
         // Set the CURL options
-        console.log("Set the CURL options");
+        std::cout<<"Set the CURL options"<<std::endl;
         curl_easy_setopt(curlHandle, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curlHandle, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curlHandle, CURLOPT_POSTFIELDS, jsonPayload.c_str());
 
         // Set up the response handling
-        console.log("Set up the response handling");
+        std::cout<<"Set up the response handling"<<std::endl;
         std::string response;
         curl_easy_setopt(curlHandle, CURLOPT_WRITEFUNCTION, writeCallback);
         curl_easy_setopt(curlHandle, CURLOPT_WRITEDATA, &response);
 
         // Perform the request
-        console.log("Perform the request");
+        std::cout<<"Perform the request"<<std::endl;
         CURLcode res = curl_easy_perform(curlHandle);
 
         // Clean up headers
-        console.log("Clean up headers");
+        std::cout<<"Clean up headers"<<std::endl;
         curl_slist_free_all(headers);
 
         // Check for errors
@@ -67,7 +67,7 @@ public:
         }
 
         // Parse the response (using JSON)
-        console.log("Parse the response (using JSON)");
+        std::cout<<"Parse the response (using JSON)"<<std::endl;
         Json::CharReaderBuilder reader;
         Json::Value jsonResponse;
         std::string errs;
@@ -79,11 +79,11 @@ public:
         }
 
         // Extract the text from the response
-        console.log("Extract the text from the response");
+        std::cout<<"Extract the text from the response"<<std::endl;
         if (jsonResponse.isMember("choices") && jsonResponse["choices"].isArray()) {
             const Json::Value& choices = jsonResponse["choices"];
             if (choices.size() > 0 && choices[0].isMember("text")) {
-                console.log("return choices[0][\"text\"].asString()");
+                std::cout<<"return choices[0][\"text\"].asString()"<<std::endl;
                 return choices[0]["text"].asString();
             }
         }
