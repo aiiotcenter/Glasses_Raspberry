@@ -1,26 +1,52 @@
-
 #include <iostream>
 #include <fstream>
 #include <string>
 #include "GptService/GptService.cpp"
 
-int main() {
-    // Read the API key from "apikey.txt"
-    std::ifstream file("apikey.txt");
+// Function to read the API key from a file
+std::string readApiKey(const std::string& filename) {
+    std::ifstream file(filename);
     if (!file) {
-        std::cerr << "Failed to open apikey.txt" << std::endl;
-        return 1;
+        std::cerr << "Failed to open " << filename << std::endl;
+        exit(1);
     }
     std::string apiKey;
     std::getline(file, apiKey);
     file.close();
+    return apiKey;
+}
 
-    // Initialize the GPTService with the API key read from the file
+// Function to format AI model data for the prompt
+std::string generatePrompt(const std::string& detectedObjects) {
+    return "You are an AI assistant helping a blind person navigate their environment. "
+           "Based on AI vision analysis, the following objects are detected in front of the user:\n"
+           + detectedObjects +
+           "\nParaphrase this data into a natural spoken description that helps the user understand their surroundings.";
+}
+
+int main() {
+    // Read the API key from "apikey.txt"
+    std::string apiKey = readApiKey("apikey.txt");
     GPTService gptService(apiKey);
 
-    std::string prompt = "Tell me a joke!";
+    // Simulated AI model output (replace this with real-time data)
+    std::string detectedObjects =
+        "- chair/meters/ahead.\n"
+        "- table/3 meters/left.\n"
+        "- door/5 meters/front.\n";
+
+    // Generate the GPT prompt
+    std::string prompt = generatePrompt(detectedObjects);
+
+    // Get GPT response
     std::string response = gptService.getGPTResponse(prompt);
-    std::cout << "GPT Response: " << response << std::endl;
+
+    // Output the paraphrased description
+    std::cout << "AI Assistant: " << response << std::endl;
+
+    return 0;
+}
+
 
     //while(true)
     //{
@@ -39,6 +65,4 @@ int main() {
 
     //}
     
-    return 0;
-}
 
