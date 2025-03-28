@@ -10,6 +10,7 @@ class HttpService
 public:
     HttpService()
     {
+        std::cout << "constructing http service";
         // loadEnvFile(".env");
         // const char *url = std::getenv("SERVER_URL");
         // if (!url)
@@ -28,9 +29,15 @@ public:
 
     std::string sendFrame(const cv::Mat &frame)
     {
-        std::cout << "entered send frame: ";
-        std::vector<uchar> buf;
-        cv::imencode(".jpg", frame, buf);
+        std::cout << "entered send frame\n";
+
+        // Save frame to a temp file
+        std::string tempFilename = "temp_frame.jpg";
+        if (!cv::imwrite(tempFilename, frame))
+        {
+            std::cerr << "❌ Failed to save temp image.\n";
+            return "";
+        }
 
         CURL *curl = curl_easy_init();
         if (!curl)
@@ -39,14 +46,12 @@ public:
         curl_mime *form = curl_mime_init(curl);
         curl_mimepart *field = curl_mime_addpart(form);
         curl_mime_name(field, "image");
-        curl_mime_data(field, reinterpret_cast<const char *>(buf.data()), buf.size());
-        // curl_mime_filename(field, "frame.jpg");
+        curl_mime_filedata(field, tempFilename.c_str()); // ✅ send as file
+        curl_mime_filename(field, "frame.jpg");          // optional
 
         curl_easy_setopt(curl, CURLOPT_URL, serverUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
-
-        std::cout << "step 1";
 
         std::string response;
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
@@ -57,15 +62,13 @@ public:
                          });
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
-        std::cout << "step2";
-
         CURLcode res = curl_easy_perform(curl);
 
-        std::cout << "res : " << res;
         curl_mime_free(form);
         curl_easy_cleanup(curl);
 
-        std::cout << "after cleanup ";
+        // Delete the temp file
+        std::remove(tempFilename.c_str());
 
         if (res != CURLE_OK)
         {
@@ -73,23 +76,10 @@ public:
             return "";
         }
 
-        // Extract "detected_objects" string from response
-        std::cout << "AI Response: " << response;
-        // std::cout << "AI Response: " << response.message;
-        // size_t start = response.find("\"detected_objects\":");
-        // if (start != std::string::npos)
-        // {
-        //     start = response.find("\"", start + 19);
-        //     size_t end = response.find("\"", start + 1);
-        //     if (start != std::string::npos && end != std::string::npos)
-        //     {
-        //         // Return value only
-        //         return response.substr(start + 1, end - start - 1);
-        //     }
-        // }
+        std::cout << "✅ Server response: " << response << "\n";
 
-        std::cerr << "Failed to parse detected_objects from response.\n";
-        return "";
+        // Extract "detected_objects" string (you can add back JSON parsing here)
+        return response;
     }
 
 private:
