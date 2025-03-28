@@ -6,6 +6,8 @@
 #include <curl/curl.h>
 #include "CameraService/CameraService.cpp"
 #include "httpService/httpService.cpp"
+#include <thread>
+#include <chrono>
 
 // Function to send GPT response to Flask TTS API
 void sendToTTS(const std::string &text)

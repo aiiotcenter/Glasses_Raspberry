@@ -26,7 +26,7 @@ public:
         curl_global_cleanup();
     }
 
-    string sendFrame(const cv::Mat &frame)
+    std::string sendFrame(const cv::Mat &frame)
     {
         std::vector<uchar> buf;
         cv::imencode(".jpg", frame, buf);
