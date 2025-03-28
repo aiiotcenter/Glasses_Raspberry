@@ -32,7 +32,10 @@ public:
     {
         std::cout << "entered send frame\n";
 
-        std::string tempFilename = "temp_frame.jpg";
+        char cwd[1024];
+        getcwd(cwd, sizeof(cwd));
+        std::string tempFilename = std::string(cwd) + "/temp_frame.jpg";
+
         if (!cv::imwrite(tempFilename, frame))
         {
             std::cerr << "❌ Failed to save temp image.\n";
