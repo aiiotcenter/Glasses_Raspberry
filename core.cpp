@@ -38,47 +38,74 @@ std::string generatePrompt(const std::string &detectedObjects)
 
 int main()
 {
+    CameraService cameraService;
+    HttpService httpService;
+
     // Read the API key from "apikey.txt"
     std::string apiKey = readApiKey("apikey.txt");
     GPTService gptService(apiKey);
 
-    // Simulated AI model output (replace this with real-time data)
-    std::string detectedObjects =
-        "- chair/meters/ahead.\n"
-        "- table/3 meters/left.\n"
-        "- door/5 meters/front.\n";
+    // while(true)
+    //{
 
-    // Generate the GPT prompt
-    std::string prompt = generatePrompt(detectedObjects);
+    // step 1 : take frame
 
-    // Get GPT response
-    std::string response = gptService.getGPTResponse(prompt);
+    // step 2 : use http service and send to server await the response
 
-    // Output the paraphrased description
-    std::cout << "AI Assistant: " << response << std::endl;
+    // step 3 : parse the response get the message and send to promotion builder
 
-    // Send GPT response to Flask TTS server
-    sendToTTS(response);
+    // step 4 : send the promotion to gpt and get the response
 
-    // Play the generated speech file
-    // system("mpg123 output.mp3");
+    // step 5 : send the response to gtts python server and play the audio
+
+    // step 6 : repaet
+
+    //}
+
+    while (true)
+    {
+        std::cout << "\nLoop started\n";
+
+        // Step 1: Capture frame
+        cv::Mat frame = cameraService.captureFrame();
+        if (frame.empty())
+        {
+            std::cerr << "Skipping: empty frame.\n";
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            continue;
+        }
+
+        // Step 2: Send to HTTP server and get detection
+        std::string detectedObjects = httpService.sendFrame(frame);
+        if (detectedObjects.empty())
+        {
+            std::cerr << "Skipping: no objects detected.\n";
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            continue;
+        }
+
+        std::cout << "Detected: " << detectedObjects << "\n";
+
+        // Step 3: Generate prompt
+        std::string prompt = generatePrompt(detectedObjects);
+
+        // Step 4: Ask GPT
+        std::string response = gptService.getGPTResponse(prompt);
+        if (response.empty())
+        {
+            std::cerr << "Skipping: no GPT response.\n";
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            continue;
+        }
+
+        std::cout << "GPT Response: " << response << "\n";
+
+        // Step 5: Speak via TTS
+        sendToTTS(response);
+
+        // Step 6: Wait before next round (adjust as needed)
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+    }
 
     return 0;
 }
-
-// while(true)
-//{
-
-// step 1 : send request to server and ask for objects
-
-// step 2 : get response json parse it
-
-// step 3 : send gpt request to shape paragraph
-
-// step 4 : send gpt response to piper
-
-// step 5 : play piper video in speakers
-
-// step 6 : repaet
-
-//}
