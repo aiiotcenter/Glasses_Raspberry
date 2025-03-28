@@ -65,17 +65,19 @@ public:
         }
 
         // Extract "detected_objects" string from response
-        size_t start = response.find("\"detected_objects\":");
-        if (start != std::string::npos)
-        {
-            start = response.find("\"", start + 19);
-            size_t end = response.find("\"", start + 1);
-            if (start != std::string::npos && end != std::string::npos)
-            {
-                // Return value only
-                return response.substr(start + 1, end - start - 1);
-            }
-        }
+        std::cout << "AI Response: " << response;
+        std::cout << "AI Response: " << response.message;
+        // size_t start = response.find("\"detected_objects\":");
+        // if (start != std::string::npos)
+        // {
+        //     start = response.find("\"", start + 19);
+        //     size_t end = response.find("\"", start + 1);
+        //     if (start != std::string::npos && end != std::string::npos)
+        //     {
+        //         // Return value only
+        //         return response.substr(start + 1, end - start - 1);
+        //     }
+        // }
 
         std::cerr << "Failed to parse detected_objects from response.\n";
         return "";
