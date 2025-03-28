@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <thread>
+#include <unistd.h>
 
 class HttpService
 {
