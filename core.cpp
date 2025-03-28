@@ -71,6 +71,7 @@ int main()
         std::cout << "\nLoop started\n";
 
         // Step 1: Capture frame
+        std::cout << "Step 1: Capturing frame...\n";
         cv::Mat frame = cameraService.captureFrame();
         if (frame.empty())
         {
@@ -80,6 +81,7 @@ int main()
         }
 
         // Step 2: Send to HTTP server and get detection
+        std::cout << "Step 2: Sending frame to server...\n";
         std::string detectedObjects = httpService.sendFrame(frame);
         if (detectedObjects.empty())
         {
@@ -91,9 +93,11 @@ int main()
         std::cout << "Detected: " << detectedObjects << "\n";
 
         // Step 3: Generate prompt
+        std::cout << "Step 3: Building prompt...\n";
         std::string prompt = generatePrompt(detectedObjects);
 
         // Step 4: Ask GPT
+        std::cout << "Step 4: Getting GPT response...\n";
         std::string response = gptService.getGPTResponse(prompt);
         if (response.empty())
         {
@@ -105,7 +109,10 @@ int main()
         std::cout << "GPT Response: " << response << "\n";
 
         // Step 5: Speak via TTS
+        std::cout << "Step 5: Speak via TTS...\n";
         sendToTTS(response);
+
+        std::cout << "\nLoop ended\n";
 
         // Step 6: Wait before next round (adjust as needed)
         std::this_thread::sleep_for(std::chrono::seconds(3));
