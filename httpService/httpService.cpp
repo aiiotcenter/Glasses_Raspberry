@@ -31,7 +31,6 @@ public:
     {
         std::cout << "entered send frame\n";
 
-        // Save frame to a temp file
         std::string tempFilename = "temp_frame.jpg";
         if (!cv::imwrite(tempFilename, frame))
         {
@@ -41,13 +40,37 @@ public:
 
         CURL *curl = curl_easy_init();
         if (!curl)
+        {
+            std::cerr << "❌ curl_easy_init failed.\n";
             return "";
+        }
+
+        std::cout << "✅ curl initialized\n";
 
         curl_mime *form = curl_mime_init(curl);
+        if (!form)
+        {
+            std::cerr << "❌ curl_mime_init failed.\n";
+            curl_easy_cleanup(curl);
+            return "";
+        }
+
+        std::cout << "✅ mime form created\n";
+
         curl_mimepart *field = curl_mime_addpart(form);
+        if (!field)
+        {
+            std::cerr << "❌ Failed to add mime part.\n";
+            curl_mime_free(form);
+            curl_easy_cleanup(curl);
+            return "";
+        }
+
         curl_mime_name(field, "image");
-        curl_mime_filedata(field, tempFilename.c_str()); // ✅ send as file
-        curl_mime_filename(field, "frame.jpg");          // optional
+        curl_mime_filedata(field, tempFilename.c_str()); // Send file
+        curl_mime_filename(field, "frame.jpg");
+
+        std::cout << "✅ File attached to form\n";
 
         curl_easy_setopt(curl, CURLOPT_URL, serverUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
@@ -62,16 +85,20 @@ public:
                          });
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
+        std::cout << "📤 Performing HTTP request...\n";
+
         CURLcode res = curl_easy_perform(curl);
 
-        std::cout << "res is " << res;
+        std::cout << "res is " << res << "\n";
 
-        curl_mime_free(form);
-        curl_easy_cleanup(curl);
+        // Do NOT call curl_mime_free if curl is already cleaned up
+        if (form)
+            curl_mime_free(form);
+        if (curl)
+            curl_easy_cleanup(curl);
 
-        std::cout << "after cleanup";
+        std::cout << "✅ After cleanup\n";
 
-        // Delete the temp file
         std::remove(tempFilename.c_str());
 
         if (res != CURLE_OK)
@@ -82,7 +109,6 @@ public:
 
         std::cout << "✅ Server response: " << response << "\n";
 
-        // Extract "detected_objects" string (you can add back JSON parsing here)
         return response;
     }
 
