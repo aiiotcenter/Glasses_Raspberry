@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <thread>
 
 class HttpService
 {
@@ -35,6 +36,19 @@ public:
         if (!cv::imwrite(tempFilename, frame))
         {
             std::cerr << "❌ Failed to save temp image.\n";
+            return "";
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        if (FILE *testFile = fopen(tempFilename.c_str(), "rb"))
+        {
+            fclose(testFile);
+            std::cout << "✅ File is readable before upload\n";
+        }
+        else
+        {
+            std::cerr << "❌ File is NOT readable before upload\n";
             return "";
         }
 
