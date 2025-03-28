@@ -28,6 +28,7 @@ public:
 
     std::string sendFrame(const cv::Mat &frame)
     {
+        std::cout << "entered send frame: ";
         std::vector<uchar> buf;
         cv::imencode(".jpg", frame, buf);
 
@@ -45,6 +46,8 @@ public:
         curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
 
+        std::cout << "step 1";
+
         std::string response;
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
                          [](void *contents, size_t size, size_t nmemb, void *userp) -> size_t
@@ -54,9 +57,15 @@ public:
                          });
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
+        std::cout << "step2";
+
         CURLcode res = curl_easy_perform(curl);
+
+        std::cout << "res : " << res;
         curl_mime_free(form);
         curl_easy_cleanup(curl);
+
+        std::cout << "after cleanup ";
 
         if (res != CURLE_OK)
         {
