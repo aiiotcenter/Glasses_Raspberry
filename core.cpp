@@ -4,6 +4,8 @@
 #include "GptService/GptService.cpp"
 #include <cstdlib> // For system()
 #include <curl/curl.h>
+#include "CameraService/CameraService.cpp"
+#include "httpService/httpService.cpp"
 
 // Function to send GPT response to Flask TTS API
 void sendToTTS(const std::string &text)
