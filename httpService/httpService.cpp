@@ -66,7 +66,7 @@ public:
 
         // Extract "detected_objects" string from response
         std::cout << "AI Response: " << response;
-        std::cout << "AI Response: " << response.message;
+        // std::cout << "AI Response: " << response.message;
         // size_t start = response.find("\"detected_objects\":");
         // if (start != std::string::npos)
         // {
