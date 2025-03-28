@@ -64,8 +64,12 @@ public:
 
         CURLcode res = curl_easy_perform(curl);
 
+        std::cout << "res is " << res;
+
         curl_mime_free(form);
         curl_easy_cleanup(curl);
+
+        std::cout << "after cleanup";
 
         // Delete the temp file
         std::remove(tempFilename.c_str());
