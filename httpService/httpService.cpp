@@ -10,14 +10,14 @@ class HttpService
 public:
     HttpService()
     {
-        loadEnvFile(".env");
-        const char *url = std::getenv("SERVER_URL");
-        if (!url)
-        {
-            std::cerr << "SERVER_URL not set in .env file!\n";
-            exit(1);
-        }
-        serverUrl = url;
+        // loadEnvFile(".env");
+        // const char *url = std::getenv("SERVER_URL");
+        // if (!url)
+        // {
+        //     std::cerr << "SERVER_URL not set in .env file!\n";
+        //     exit(1);
+        // }
+        serverUrl = "http://livebees.aiiot.center/detect_objects";
         curl_global_init(CURL_GLOBAL_ALL);
     }
 
