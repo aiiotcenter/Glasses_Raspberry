@@ -8,12 +8,18 @@
 #include "httpService/httpService.cpp"
 #include <thread>
 #include <chrono>
+#include <sstream>
 
 // Function to send GPT response to Flask TTS API
 void sendToTTS(const std::string &text)
 {
-    std::string command = "curl -X POST -F \"text=" + text + "\" http://127.0.0.1:5000/tts | mpg123 -";
-    system(command.c_str()); // Execute the curl command
+    std::ostringstream cmd;
+    cmd << "curl -X POST -F \"text=" << text << "\" http://127.0.0.1:5000/tts | mpg123 -";
+    std::cout << "TTS Command: " << cmd.str() << std::endl;
+
+    int result = system(cmd.str().c_str());
+    if (result != 0)
+        std::cerr << "❌ system() command failed with code " << result << "\n";
 }
 
 // Function to read the API key from a file
