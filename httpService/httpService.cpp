@@ -29,6 +29,7 @@ public:
         char cwd[1024];
         getcwd(cwd, sizeof(cwd));
         std::string tempFilename = std::string(cwd) + "/temp_frame.jpg";
+        std::string responseFile = std::string(cwd) + "/response.txt";
 
         if (!cv::imwrite(tempFilename, frame))
         {
@@ -49,10 +50,19 @@ public:
             return "";
         }
 
+        // Open file for response
+        FILE *fp = fopen(responseFile.c_str(), "wb");
+        if (!fp)
+        {
+            std::cerr << "❌ Failed to create response file\n";
+            return "";
+        }
+
         CURL *curl = curl_easy_init();
         if (!curl)
         {
             std::cerr << "❌ curl_easy_init failed.\n";
+            fclose(fp);
             return "";
         }
 
@@ -62,6 +72,7 @@ public:
         if (!form)
         {
             std::cerr << "❌ curl_mime_init failed.\n";
+            fclose(fp);
             curl_easy_cleanup(curl);
             return "";
         }
@@ -72,6 +83,7 @@ public:
         if (!field)
         {
             std::cerr << "❌ Failed to add mime part.\n";
+            fclose(fp);
             curl_mime_free(form);
             curl_easy_cleanup(curl);
             return "";
@@ -83,29 +95,32 @@ public:
 
         std::cout << "✅ File attached to form\n";
 
+        // Error buffer for detailed error messages
+        char errorBuffer[CURL_ERROR_SIZE];
+        errorBuffer[0] = 0; // Empty string
+
         curl_easy_setopt(curl, CURLOPT_URL, serverUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);       // Increased timeout to 10 seconds
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L); // 5 second connection timeout
-        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);       // Prevent SIGPIPE from crashing the application
-
-        std::string response;
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-        // Enable verbose logging for debugging
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);             // Increased timeout
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);       // Connection timeout
+        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);             // Prevent SIGPIPE
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);            // Write to file
+        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer); // Store error details
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);              // Enable verbose logging
 
         std::cout << "📤 Performing HTTP request...\n";
 
         CURLcode res = curl_easy_perform(curl);
+
+        // Close the file before further processing
+        fclose(fp);
 
         // Get HTTP response code
         long http_code = 0;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
         std::cout << "HTTP response code: " << http_code << std::endl;
 
-        // Do NOT call curl_mime_free if curl is already cleaned up
+        // Clean up curl resources
         if (form)
             curl_mime_free(form);
         if (curl)
@@ -113,15 +128,80 @@ public:
 
         std::cout << "✅ After cleanup\n";
 
+        // Clean up the temporary image file
         std::remove(tempFilename.c_str());
 
         if (res != CURLE_OK)
         {
             std::cerr << "HTTP Error: " << curl_easy_strerror(res) << "\n";
+            std::cerr << "Error details: " << errorBuffer << "\n";
             return "";
         }
 
+        // Read response from file
+        std::ifstream responseStream(responseFile);
+        std::string response;
+        if (responseStream)
+        {
+            response = std::string((std::istreambuf_iterator<char>(responseStream)),
+                                   std::istreambuf_iterator<char>());
+            responseStream.close();
+        }
+        else
+        {
+            std::cerr << "❌ Failed to read response file\n";
+        }
+
+        // Clean up response file
+        std::remove(responseFile.c_str());
+
         std::cout << "✅ Server response: " << response << "\n";
+
+        return response;
+    }
+
+    // Fallback method using system command if the main method fails
+    std::string sendFrameWithSystemCommand(const cv::Mat &frame)
+    {
+        char cwd[1024];
+        getcwd(cwd, sizeof(cwd));
+        std::string tempFilename = std::string(cwd) + "/temp_frame.jpg";
+        std::string responseFile = std::string(cwd) + "/response.txt";
+
+        if (!cv::imwrite(tempFilename, frame))
+        {
+            std::cerr << "Failed to save temp image.\n";
+            return "";
+        }
+
+        // Use curl command line instead of libcurl
+        std::string cmd = "curl -s -X POST -F \"image=@" + tempFilename + "\" " + serverUrl + " > " + responseFile;
+
+        int result = system(cmd.c_str());
+        if (result != 0)
+        {
+            std::cerr << "Failed to execute curl command (exit code: " << result << ")\n";
+            std::remove(tempFilename.c_str());
+            return "";
+        }
+
+        // Read response from file
+        std::ifstream responseStream(responseFile);
+        std::string response;
+        if (responseStream)
+        {
+            response = std::string((std::istreambuf_iterator<char>(responseStream)),
+                                   std::istreambuf_iterator<char>());
+            responseStream.close();
+        }
+        else
+        {
+            std::cerr << "Failed to read response file\n";
+        }
+
+        // Clean up
+        std::remove(tempFilename.c_str());
+        std::remove(responseFile.c_str());
 
         return response;
     }
@@ -129,37 +209,22 @@ public:
     // Method to test server connection
     bool testServerConnection()
     {
-        CURL *curl = curl_easy_init();
-        if (!curl)
+        // Try a simple HEAD request using system command
+        std::string cmd = "curl -s -I " + serverUrl + " > /dev/null";
+        int result = system(cmd.c_str());
+
+        if (result == 0)
         {
-            return false;
+            std::cout << "Server is reachable via system command\n";
+            return true;
         }
 
-        curl_easy_setopt(curl, CURLOPT_URL, serverUrl.c_str());
-        curl_easy_setopt(curl, CURLOPT_NOBODY, 1L); // HEAD request
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3L);
-
-        CURLcode res = curl_easy_perform(curl);
-        long http_code = 0;
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-
-        curl_easy_cleanup(curl);
-
-        std::cout << "Server test - HTTP code: " << http_code << ", Result: " << (res == CURLE_OK ? "OK" : "Failed") << std::endl;
-
-        return (res == CURLE_OK && http_code > 0 && http_code < 500);
+        std::cout << "Warning: Server connection test failed\n";
+        return false;
     }
 
 private:
     std::string serverUrl;
-
-    // Static callback function for curl
-    static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-    {
-        ((std::string *)userp)->append((char *)contents, size * nmemb);
-        return size * nmemb;
-    }
 
     void loadEnvFile(const std::string &filepath)
     {
