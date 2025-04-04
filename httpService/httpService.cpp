@@ -13,7 +13,7 @@ public:
     HttpService()
     {
         std::cout << "Constructing HTTP service...\n";
-        serverUrl = "http://livebees.aiiot.center/detect_objects";
+        serverUrl = "http://livebees.aiiot.center/process_frame";
         curl_global_init(CURL_GLOBAL_ALL);
     }
 
